@@ -1,0 +1,58 @@
+services:
+  mysql:
+    container_name: mysql-container
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE:
+      MYSQL_ROOT_HOST:
+      MYSQL_ROOT_PASSWORD:
+      TZ: 'Asia/Seoul'
+    expose:
+      - 3306
+    ports:
+      -  "3307:3306"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - /home/ubuntu/docker/mysqlData:/var/lib/mysql
+    command:
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_unicode_ci"
+    networks:
+      - pob
+
+  application:
+    container_name: spring-server
+    image:
+      j703/backend
+    environment:
+      - DATA_SOURCE_URL=
+      - USER_NAME=
+      - USER_PASSWORD=
+    volumes:
+      - ./resources/:/app/resources
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mysql
+    networks:
+      - pob
+  jenkins:
+    container_name: jenkins-container
+    image: jenkins/jenkins:lts
+    restart: unless-stopped
+    user: root
+    ports:
+      - "9090:8080"
+      - "50000:50000"
+    volumes:
+      - /home/ubuntu/jenkins_home:/var/jenkins_home
+    networks:
+      - pob
+networks:
+  pob:
+    name: pob
+    driver: bridge
